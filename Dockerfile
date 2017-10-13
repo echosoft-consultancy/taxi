@@ -1,6 +1,6 @@
 FROM openjdk:8-jre
 
-COPY build/libs/taxi-all-1.0-SNAPSHOT.jar /opt/taxi.jar
+COPY build/libs/taxi-1.0-SNAPSHOT-all.jar /opt/taxi.jar
 
 EXPOSE 4567
 
