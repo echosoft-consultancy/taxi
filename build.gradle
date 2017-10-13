@@ -6,13 +6,19 @@ buildscript {
 
     repositories {
         mavenCentral()
+        jcenter()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
     }
 }
 
 apply plugin: 'kotlin'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'application'
+
+mainClassName = 'taxi.TaxiKt'
 
 repositories {
     mavenCentral()
@@ -29,15 +35,4 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
-}
-
-task fatJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': 'Taxi',
-                'Implementation-Version': version,
-                'Main-Class': 'taxi.TaxiKt'
-    }
-    baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
 }
