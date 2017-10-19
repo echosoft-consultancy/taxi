@@ -1,16 +1,23 @@
 package taxi
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.natpryce.konfig.ConfigurationProperties
+import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
+import com.natpryce.konfig.EnvironmentVariables
+import com.natpryce.konfig.overriding
 import spark.Spark.post
 
+
+val config = systemProperties() overriding
+        EnvironmentVariables() overriding
+        ConfigurationProperties.fromResource("defaults.properties")
+
+val jestClient = createElasticsearchClient()
+
 fun main(args: Array<String>) {
-    post("/driver/coordinate") { req, res ->
-        val coordinates = jacksonObjectMapper().readValue<Coordinate>(req.body())
-        jacksonObjectMapper().writeValueAsString(coordinates)
-    }
-    post("/passenger/coordinate") { req, res ->
-        val coordinates = jacksonObjectMapper().readValue<Coordinate>(req.body())
-        jacksonObjectMapper().writeValueAsString(coordinates)
-    }
+    System.setProperty("org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY", "TRACE")
+    setupSchema(jestClient)
+
+    // Register rest endpoints
+    post("/driver/coordinate", addDriverCoordinate)
+    post("/passenger/coordinate", addPassengerCoordinate)
 }
