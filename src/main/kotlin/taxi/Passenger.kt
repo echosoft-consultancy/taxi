@@ -7,14 +7,17 @@ import spark.Request
 import spark.Response
 import java.time.LocalDateTime
 
+data class PassengerCoordinate(val email: String, val timestamp : LocalDateTime, val coordinates: Coordinate)
 
-val addPassengerCoordinate: (Request, Response) -> Map<String, Any> = { req, res ->
+val addPassengerCoordinate: (Request, Response) -> PassengerCoordinate = { req, res ->
+    // Parse coordinates from json
     val coordinates = jacksonObjectMapper().readValue<Coordinate>(req.body())
-    val passengerItem = mapOf("email" to "test@example.com",
-            "coordinates" to
-                    mapOf("lat" to coordinates.lat, "lon" to coordinates.lon),
-            "timestamp" to LocalDateTime.now().toString())
-    jestClient.execute(Index.Builder(passengerItem).index("taxi").type("passenger").build())
+
+    // Add new passenger coordinates to elasticsearch passenger mapping
+    val passengerCoordinate = PassengerCoordinate(email = "test@example.com",
+            timestamp = LocalDateTime.now(),
+            coordinates = coordinates)
+    jestClient.execute(Index.Builder(passengerCoordinate).index("taxi").type("passenger").build())
     res.status(201)
-    passengerItem
+    passengerCoordinate
 }
