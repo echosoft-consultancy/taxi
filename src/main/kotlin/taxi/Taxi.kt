@@ -4,6 +4,9 @@ import com.natpryce.konfig.ConfigurationProperties
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import com.natpryce.konfig.EnvironmentVariables
 import com.natpryce.konfig.overriding
+import spark.Request
+import spark.Response
+import spark.Spark.get
 import spark.Spark.post
 
 
@@ -20,4 +23,7 @@ fun main(args: Array<String>) {
     // Register rest endpoints
     post("/driver/coordinate", addDriverCoordinate)
     post("/passenger/coordinate", addPassengerCoordinate)
+    get("/healthcheck", healthcheck)
 }
+
+val healthcheck = { request: Request, response: Response -> "ok" }

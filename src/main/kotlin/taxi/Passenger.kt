@@ -9,6 +9,7 @@ import java.time.LocalDateTime
 
 data class PassengerCoordinate(val email: String, val timestamp : LocalDateTime, val coordinates: Coordinate)
 
+
 val addPassengerCoordinate: (Request, Response) -> PassengerCoordinate = { req, res ->
     // Parse coordinates from json
     val coordinates = jacksonObjectMapper().readValue<Coordinate>(req.body())

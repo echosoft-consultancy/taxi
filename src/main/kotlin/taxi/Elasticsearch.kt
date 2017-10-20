@@ -1,6 +1,5 @@
 package taxi
 
-import com.github.rholder.retry.Retryer
 import com.github.rholder.retry.RetryerBuilder
 import com.github.rholder.retry.StopStrategies
 import com.github.rholder.retry.WaitStrategies
@@ -45,7 +44,7 @@ val passengerMapping =
 }
 """
 
-object elasticsearchConfig : PropertyGroup() {
+object elasticsearch : PropertyGroup() {
     val port by intType
     val host by stringType
 }
@@ -53,7 +52,7 @@ object elasticsearchConfig : PropertyGroup() {
 fun createElasticsearchClient() : JestClient {
     val factory = JestClientFactory()
     factory.setHttpClientConfig(HttpClientConfig
-            .Builder("http://${config[elasticsearchConfig.host]}:${config[elasticsearchConfig.port]}")
+            .Builder("http://${config[elasticsearch.host]}:${config[elasticsearch.port]}")
             .multiThreaded(true)
             .credentialsProvider(BasicCredentialsProvider().apply {
                 setCredentials(AuthScope.ANY, UsernamePasswordCredentials("elastic", "changeme"))
