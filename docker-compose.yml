@@ -2,6 +2,7 @@ version: '3'
 services:
   taxi:
     container_name: taxi
+    image: 'echosoft/taxi'
     build: .
     ports:
      - "4567:4567"

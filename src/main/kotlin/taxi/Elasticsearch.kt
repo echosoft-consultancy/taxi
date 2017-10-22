@@ -9,6 +9,7 @@ import com.natpryce.konfig.intType
 import com.natpryce.konfig.stringType
 import io.searchbox.client.JestClient
 import io.searchbox.client.JestClientFactory
+import io.searchbox.client.JestResult
 import io.searchbox.client.config.HttpClientConfig
 import io.searchbox.indices.CreateIndex
 import io.searchbox.indices.mapping.PutMapping
@@ -16,6 +17,7 @@ import mu.KotlinLogging
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.impl.client.BasicCredentialsProvider
+import spark.Response
 import java.lang.Exception
 import java.util.concurrent.TimeUnit
 
@@ -23,10 +25,26 @@ import java.util.concurrent.TimeUnit
 private val logger = KotlinLogging.logger {}
 
 
-val passengerMapping =
+val taxiMapping =
 """
 {
    "passenger":{
+      "properties":{
+         "email":{
+            "type":"string",
+            "store":"yes",
+            "fielddata": true
+         },
+         "coordinates":{
+            "type":"geo_point"
+         },
+         "timestamp":{
+            "type":"date",
+            "format":"date_hour_minute_second_millis"
+         }
+      }
+   },
+   "driver":{
       "properties":{
          "email":{
             "type":"string",
@@ -37,7 +55,35 @@ val passengerMapping =
          },
          "timestamp":{
             "type":"date",
-            "format":"basic_date_time"
+            "format":"date_hour_minute_second_millis"
+         }
+      }
+   },
+   "rideRequest":{
+      "properties":{
+         "email":{
+            "type":"string",
+            "store":"yes"
+         },
+         "timestamp":{
+            "type":"date",
+            "format":"date_hour_minute_second_millis"
+         }
+      }
+   },
+   "ride":{
+      "properties":{
+         "passenger":{
+            "type":"string",
+            "store":"yes"
+         },
+         "driver":{
+            "type":"string",
+            "store":"yes"
+         },
+         "timestamp":{
+            "type":"date",
+            "format":"date_hour_minute_second_millis"
          }
       }
    }
@@ -61,12 +107,15 @@ fun createElasticsearchClient() : JestClient {
     return factory.`object`
 }
 
-private fun retry(functionToRetry: () -> Int) {
-    val retryer = RetryerBuilder.newBuilder<Int>()
+private fun retry(functionToRetry: () -> JestResult) {
+    val retryer = RetryerBuilder.newBuilder<JestResult>()
             .retryIfResult {
-                logger.info { "HTTP status of elasticsearch operation $it" }
-                val successfulOrAlreadyCreated = !it.toString().startsWith("20") and !it.toString().startsWith("40")
-                successfulOrAlreadyCreated
+                val statusCode = it?.responseCode.toString()
+                if (statusCode.startsWith("40")) { logger.info("Failed with error: ${it?.errorMessage}")
+                    false
+                } else {
+                    !statusCode.startsWith("20")
+                }
             }
             .retryIfException {
                 logger.info { "Exception thrown $it" }
@@ -78,11 +127,11 @@ private fun retry(functionToRetry: () -> Int) {
     retryer.call(functionToRetry)
 }
 
-fun setupSchema(jestClient: JestClient) {logger.info { "Creating taxi index with retry if failure " }
+fun setupSchema(jestClient: JestClient) {
     logger.info { "Creating taxi index with retry if failure " }
-    retry({ jestClient.execute(CreateIndex.Builder("taxi").build()).responseCode })
+    retry({ jestClient.execute(CreateIndex.Builder("taxi").build()) })
 
     logger.info { "Creating taxi.passenger mapping with retry if failure" }
-    val putMapping = PutMapping.Builder("taxi", "passenger", passengerMapping).build()
-    retry({jestClient.execute(putMapping).responseCode})
+    val putMapping = PutMapping.Builder("taxi", "passenger", taxiMapping).build()
+    retry({jestClient.execute(putMapping) })
 }
