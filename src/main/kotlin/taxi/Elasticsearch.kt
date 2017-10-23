@@ -33,7 +33,7 @@ val taxiMapping =
          "email":{
             "type":"string",
             "store":"yes",
-            "fielddata": true
+            "index": "not_analyzed"
          },
          "coordinates":{
             "type":"geo_point"

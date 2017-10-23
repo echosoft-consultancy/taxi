@@ -85,26 +85,37 @@ private fun rideRequests() : List<RideRequest> {
 }
 
 private fun latestPassengerCoordinates(lat: String, lon: String, rideRequesters: List<String>) : List<UserCoordinate> {
-    // TODO return latest coordinates for passenger
     // TODO Should only search over emails
     val query = """
 {
-    "query": {
-        "bool" : {
-            "must" : {
-                "match_all" : {}
-            },
-            "filter" : {
-                "geo_distance" : {
-                    "distance" : "10km",
-                    "coordinates" : {
-                        "lat" : $lat,
-                        "lon" : $lon
-                    }
-                }
+   "query":{
+      "bool":{
+         "filter":{
+            "geo_distance":{
+               "distance":"10km",
+               "coordinates":{
+                  "lat": $lat,
+                  "lon": $lon
+               }
             }
-        }
-    }
+         }
+      }
+   },
+   "aggs":{
+      "latest_by_email":{
+         "terms":{
+            "field":"email"
+         },
+         "aggs":{
+            "latest":{
+               "top_hits": {
+                    "size": 1,
+                    "sort": [ { "timestamp": { "order": "desc" } } ]
+                 }
+            }
+         }
+      }
+   }
 }
 """
     val search = Search.Builder(query)
@@ -112,5 +123,10 @@ private fun latestPassengerCoordinates(lat: String, lon: String, rideRequesters:
             .addType("passenger")
             .build()
     val searchResult = jestClient.execute(search)
-    return searchResult.getHits(UserCoordinate::class.java).map { it.source }
+    return searchResult.aggregations
+            .getTermsAggregation("latest_by_email")
+            .buckets
+            .map { it.getTopHitsAggregation("latest")
+                    .getHits(UserCoordinate::class.java)[0].source
+            }
 }
