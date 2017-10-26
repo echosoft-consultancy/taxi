@@ -91,14 +91,13 @@ val taxiMapping =
 """
 
 object elasticsearch : PropertyGroup() {
-    val port by intType
-    val host by stringType
+    val api by stringType
 }
 
 fun createElasticsearchClient() : JestClient {
     val factory = JestClientFactory()
     factory.setHttpClientConfig(HttpClientConfig
-            .Builder("http://${config[elasticsearch.host]}:${config[elasticsearch.port]}")
+            .Builder(config[elasticsearch.api])
             .multiThreaded(true)
             .credentialsProvider(BasicCredentialsProvider().apply {
                 setCredentials(AuthScope.ANY, UsernamePasswordCredentials("elastic", "changeme"))
